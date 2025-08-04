@@ -1,9 +1,9 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { getProfile } from '../lib/api'
 import { useForm } from 'react-hook-form'
-import { useEffect, useState } from 'react'
 
 interface JourneyForm {
   name: string
@@ -21,24 +21,28 @@ const cities = [
 ]
 
 export default function HomePage() {
-  const { data: session, status } = useSession()
   const router = useRouter()
+  const [userRole, setUserRole] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState('')
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<JourneyForm>()
 
   useEffect(() => {
-    if (status === 'loading') return
-    if (!session) {
-      router.push('/login')
-      return
+    async function fetchUserRole() {
+      const profile = await getProfile()
+      if (!profile || profile.error || profile.message === 'Unauthorized') {
+        router.push('/login')
+      } else {
+        setUserRole(profile.email === 'admin@example.com' ? 'admin' : 'user')
+        setUserEmail(profile.email)
+        setIsLoading(false)
+      }
     }
-
-    // Prefill user information
-    setValue('name', session.user?.name || '')
-    setValue('email', session.user?.email || '')
-  }, [session, status, router, setValue])
+    fetchUserRole()
+  }, [router])
 
   const onSubmit = async (data: JourneyForm) => {
     setIsSubmitting(true)
@@ -53,7 +57,7 @@ export default function HomePage() {
         },
         body: JSON.stringify({
           ...data,
-          userId: session?.user?.id,
+          // userId: session?.user?.id,
           status: 'pending',
           createdAt: new Date().toISOString(),
         }),
@@ -84,7 +88,7 @@ export default function HomePage() {
     )
   }
 
-  if (!session) return null
+  // if (!session) return null
 
   return (
     <div className="max-w-2xl mx-auto">

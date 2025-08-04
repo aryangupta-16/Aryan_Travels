@@ -1,9 +1,9 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
+import { getToken, getProfile } from '../lib/api'
 
 interface Journey {
   id: string
@@ -20,27 +20,55 @@ interface Journey {
 const ITEMS_PER_PAGE = 10
 
 export default function AdminPage() {
-  const { data: session, status } = useSession()
   const router = useRouter()
-  const [journeys, setJourneys] = useState<Journey[]>([])
+  const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [journeys, setJourneys] = useState<Journey[]>([])
   const [currentPage, setCurrentPage] = useState(1)
 
   useEffect(() => {
-    if (status === 'loading') return
-    if (!session) {
-      router.push('/login')
-      return
+    const checkAdminAccess = async () => {
+      const token = getToken()
+      if (!token) {
+        router.push('/login')
+        return
+      }
+      
+      try {
+        const profile = await getProfile()
+        if (profile) {
+          setUser(profile)
+          // Check if user is admin
+          if (profile.email !== 'admin@aryantravels.com') {
+            router.push('/home')
+          }
+        } else {
+          router.push('/login')
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error)
+        router.push('/login')
+      } finally {
+        setLoading(false)
+      }
     }
 
-    // Check if user is admin
-    if (session.user?.email !== 'admin@aryantravels.com') {
-      router.push('/home')
-      return
-    }
+    checkAdminAccess()
+  }, [router])
 
-    // Mock data - replace with actual API call
-    const mockJourneys: Journey[] = [
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+      </div>
+    )
+  }
+
+  if (!user || user.email !== 'admin@aryantravels.com') {
+    return null
+  }
+
+  const mockJourneys:Journey[] = [
       {
         id: '1',
         name: 'John Doe',
@@ -112,7 +140,7 @@ export default function AdminPage() {
 
     setJourneys(mockJourneys)
     setLoading(false)
-  }, [session, status, router])
+  }, [user, router])
 
   const handleStatusUpdate = async (journeyId: string, newStatus: 'completed' | 'pending') => {
     try {
@@ -161,7 +189,7 @@ export default function AdminPage() {
     return null
   }
 
-  const pendingJourneys = journeys.filter(j => j.status === 'pending')
+  const pendingJourneys = journeys.filter((j: Journey) => j.status === 'pending')
   const totalPages = Math.ceil(pendingJourneys.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const endIndex = startIndex + ITEMS_PER_PAGE

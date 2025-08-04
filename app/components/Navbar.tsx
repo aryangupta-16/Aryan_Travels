@@ -1,17 +1,42 @@
 'use client'
 
-import { useSession, signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { getToken, getProfile } from '../lib/api'
 
 export default function Navbar() {
-  const { data: session, status } = useSession()
   const pathname = usePathname()
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
-  if (status === 'loading') return null
-  if (!session || pathname === '/login') return null
+  useEffect(() => {
+    const fetchUser = async () => {
+      const token = getToken()
+      if (!token || pathname === '/login') {
+        setLoading(false)
+        return
+      }
+      
+      try {
+        const profile = await getProfile()
+        if (profile) {
+          setUser(profile)
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const isAdmin = session?.user?.email === 'admin@aryantravels.com' // Mock admin check
+    fetchUser()
+  }, [pathname])
+
+  if (loading) return null
+  if (!user) return null
+
+  const isAdmin = user?.email === 'admin@aryantravels.com'
 
   const navLinks = [
     { href: '/home', label: 'Home' },
@@ -46,10 +71,13 @@ export default function Navbar() {
             
             <div className="flex items-center space-x-4">
               <span className="text-sm text-gray-600">
-                Welcome, {session.user?.name || session.user?.email}
+                Welcome, {user.name || user.email}
               </span>
               <button
-                onClick={() => signOut({ callbackUrl: '/login' })}
+                onClick={() => {
+                  localStorage.removeItem('jwt');
+                  window.location.href = '/login';
+                }}
                 className="btn-secondary text-sm"
               >
                 Sign Out
