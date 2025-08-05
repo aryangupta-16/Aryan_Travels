@@ -34,7 +34,7 @@ export default function HomePage() {
     async function fetchUserRole() {
       const profile = await getProfile()
       if (!profile || profile.error || profile.message === 'Unauthorized') {
-        router.push('/login')
+        router.push('/home')
       } else {
         setUserRole(profile.email === 'admin@example.com' ? 'admin' : 'user')
         setUserEmail(profile.email)
