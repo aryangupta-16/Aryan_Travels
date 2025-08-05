@@ -17,7 +17,9 @@ export async function signup(name: string, email: string, password: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, email, password }),
   });
-  return await res.json();
+  const data = await res.json();
+  saveToken(data.token);
+  return data;
 }
 
 export function saveToken(token: string) {

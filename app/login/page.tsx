@@ -105,10 +105,16 @@ export default function LoginPage() {
               disabled={isLoading}
               className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? 'Signing in...' : 'Login'}
             </button>
             
- 
+            <button
+              type="button"
+              onClick={() => router.push('/signup')}
+              className="w-full btn-secondary"
+            >
+              Don't have an account? Sign Up
+            </button>
           </div>
           
           <div className="text-center text-sm text-gray-600">

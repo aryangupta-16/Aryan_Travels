@@ -4,15 +4,23 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { getToken, getProfile } from '../lib/api'
+import { jwtDecode } from 'jwt-decode'
 
 export default function Navbar() {
   const pathname = usePathname()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
+
+  const token = getToken()
+  let decodedToken: any = {}
+  if (token) {
+    decodedToken = jwtDecode(token)
+  }
+
   useEffect(() => {
     const fetchUser = async () => {
-      const token = getToken()
+      
       if (!token || pathname === '/login') {
         setLoading(false)
         return
@@ -36,7 +44,7 @@ export default function Navbar() {
   if (loading) return null
   if (!user) return null
 
-  const isAdmin = user?.email === 'admin@aryantravels.com'
+  const isAdmin = decodedToken?.role.toLowerCase() === 'admin'
 
   const navLinks = [
     { href: '/home', label: 'Home' },

@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { getProfile } from '../lib/api'
+import { getProfile, getToken } from '../lib/api'
 import { useForm } from 'react-hook-form'
+import axios from 'axios'
+import { jwtDecode } from 'jwt-decode'
 
 interface JourneyForm {
-  name: string
+  fullName: string
   email: string
   contactNumber: string
   travelMode: 'flight' | 'train'
@@ -27,6 +29,13 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitMessage, setSubmitMessage] = useState('')
+  const token = getToken()
+
+  let decodedToken: any = {}
+      if (token) {
+        decodedToken = jwtDecode(token)
+      }
+      // console.log(decodedToken)
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<JourneyForm>()
 
@@ -34,7 +43,7 @@ export default function HomePage() {
     async function fetchUserRole() {
       const profile = await getProfile()
       if (!profile || profile.error || profile.message === 'Unauthorized') {
-        router.push('/home')
+        router.push('/login')
       } else {
         setUserRole(profile.email === 'admin@example.com' ? 'admin' : 'user')
         setUserEmail(profile.email)
@@ -47,26 +56,33 @@ export default function HomePage() {
   const onSubmit = async (data: JourneyForm) => {
     setIsSubmitting(true)
     setSubmitMessage('')
-
+    
+    console.log(data);
+    console.log(token) 
     try {
       // Mock API call - replace with actual API endpoint
-      const response = await fetch('/api/journeys', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const { data: response } = await axios.post(
+        'http://localhost:8080/api/user/createjourney',
+        {
           ...data,
           // userId: session?.user?.id,
           status: 'pending',
           createdAt: new Date().toISOString(),
-        }),
-      })
-
-      if (response.ok) {
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      )
+      console.log(response)
+      if (response.id) {
         setSubmitMessage('Journey booked successfully! You can view it in your profile.')
         // Reset form except prefilled fields
         setValue('contactNumber', '')
+        setValue('fullName', '')
+        setValue('email', '')
         setValue('travelMode', 'flight')
         setValue('source', '')
         setValue('destination', '')
@@ -80,13 +96,13 @@ export default function HomePage() {
     }
   }
 
-  if (status === 'loading') {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
+  // if (status === 'loading') {
+  //   return (
+  //     <div className="flex justify-center items-center min-h-screen">
+  //       <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
+  //     </div>
+  //   )
+  // }
 
   // if (!session) return null
 
@@ -103,13 +119,13 @@ export default function HomePage() {
                 Full Name
               </label>
               <input
-                {...register('name', { required: 'Name is required' })}
+                {...register('fullName', { required: 'Name is required' })}
                 type="text"
                 className="input-field"
                 placeholder="Enter your full name"
               />
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
+              {errors.fullName && (
+                <p className="mt-1 text-sm text-red-600">{errors.fullName.message}</p>
               )}
             </div>
 
@@ -136,21 +152,20 @@ export default function HomePage() {
           </div>
 
           <div>
-            <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700 mb-2">
-              Contact Number
-            </label>
-            <input
-              {...register('contactNumber', { 
-                required: 'Contact number is required',
-                pattern: {
-                  value: /^[0-9]{10}$/,
-                  message: 'Please enter a valid 10-digit phone number'
-                }
-              })}
-              type="tel"
-              className="input-field"
-              placeholder="Enter your 10-digit phone number"
-            />
+              <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                Contact Number
+              </label>
+              <input
+                {...register('contactNumber', { 
+                  required: 'Contact number is required',
+                  valueAsNumber: true,
+                  min: 1000000000,  // Minimum 10 digits
+                  max: 9999999999   // Maximum 10 digits
+                })}
+                type="number"
+                className="input-field"
+                placeholder="Enter your contact number"
+              />
             {errors.contactNumber && (
               <p className="mt-1 text-sm text-red-600">{errors.contactNumber.message}</p>
             )}

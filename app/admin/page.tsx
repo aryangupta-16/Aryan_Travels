@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { getToken, getProfile } from '../lib/api'
+import { jwtDecode } from 'jwt-decode'
+import axios from 'axios'
 
 interface Journey {
   id: string
@@ -27,36 +29,130 @@ export default function AdminPage() {
   const [currentPage, setCurrentPage] = useState(1)
 
 
+  // const mockJourneys:Journey[] = [
+  //   {
+  //     id: '1',
+  //     name: 'John Doe',
+  //     email: 'user@example.com',
+  //     contactNumber: '9876543210',
+  //     travelMode: 'flight',
+  //     source: 'Mumbai',
+  //     destination: 'Delhi',
+  //     status: 'pending',
+  //     createdAt: '2024-01-15T10:30:00Z'
+  //   },
+  //   {
+  //     id: '2',
+  //     name: 'Jane Smith',
+  //     email: 'jane@example.com',
+  //     contactNumber: '9876543211',
+  //     travelMode: 'train',
+  //     source: 'Delhi',
+  //     destination: 'Bangalore',
+  //     status: 'pending',
+  //     createdAt: '2024-01-14T14:20:00Z'
+  //   },
+  //   {
+  //     id: '3',
+  //     name: 'Mike Johnson',
+  //     email: 'mike@example.com',
+  //     contactNumber: '9876543212',
+  //     travelMode: 'flight',
+  //     source: 'Chennai',
+  //     destination: 'Kolkata',
+  //     status: 'pending',
+  //     createdAt: '2024-01-13T09:15:00Z'
+  //   },
+  //   {
+  //     id: '4',
+  //     name: 'Sarah Wilson',
+  //     email: 'sarah@example.com',
+  //     contactNumber: '9876543213',
+  //     travelMode: 'train',
+  //     source: 'Bangalore',
+  //     destination: 'Mumbai',
+  //     status: 'pending',
+  //     createdAt: '2024-01-12T16:45:00Z'
+  //   },
+  //   {
+  //     id: '5',
+  //     name: 'David Brown',
+  //     email: 'david@example.com',
+  //     contactNumber: '9876543214',
+  //     travelMode: 'flight',
+  //     source: 'Hyderabad',
+  //     destination: 'Pune',
+  //     status: 'pending',
+  //     createdAt: '2024-01-11T11:30:00Z'
+  //   },
+  //   // Add more mock data to test pagination
+  //   ...Array.from({ length: 15 }, (_, i) => ({
+  //     id: `${i + 6}`,
+  //     name: `User ${i + 6}`,
+  //     email: `user${i + 6}@example.com`,
+  //     contactNumber: `987654321${i}`,
+  //     travelMode: i % 2 === 0 ? 'flight' as const : 'train' as const,
+  //     source: 'Mumbai',
+  //     destination: 'Delhi',
+  //     status: 'pending' as const,
+  //     createdAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString()
+  //   }))
+  // ]
+
+  let token = getToken()
+
+
   useEffect(() => {
+
     const checkAdminAccess = async () => {
-      let token = getToken()
-      token = "123456"
+      
       if (!token) {
         router.push('/login')
         return
       }
+      let decodedToken: any = {}
+      if (token) {
+        decodedToken = jwtDecode(token)
+      }
       
       try {
         const profile = await getProfile()
+        console.log(profile);
         if (profile) {
           setUser(profile)
           // Check if user is admin
-          if (profile.email !== 'admin@aryantravels.com') {
+          if (decodedToken.role.toLowerCase() !== 'admin') {
             router.push('/home')
+          }else{
+            // setJourneys(mockJourneys)
+            setLoading(false)
           }
         } else {
           router.push('/login')
-          // router.push('/home')
         }
       } catch (error) {
         console.error('Failed to fetch profile:', error)
-        // router.push('/login')
-        router.push('/home');
+        router.push('/login');
       } finally {
         setLoading(false)
       }
     }
 
+    const retrieveJourneys = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/api/user/journeys', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
+        console.log(response);
+        setJourneys(response.data)
+      } catch (error) {
+        console.error('Failed to fetch journeys:', error)
+      }
+    }
+
+    retrieveJourneys()
     checkAdminAccess()
   }, [router])
 
@@ -68,96 +164,28 @@ export default function AdminPage() {
     )
   }
 
-  if (!user || user.email !== 'admin@aryantravels.com') {
-    return null
-  }
+  // if (!user || user.email !== 'admin@aryantravels.com') {
+  //   return null
+  // }
 
-  const mockJourneys:Journey[] = [
-      {
-        id: '1',
-        name: 'John Doe',
-        email: 'user@example.com',
-        contactNumber: '9876543210',
-        travelMode: 'flight',
-        source: 'Mumbai',
-        destination: 'Delhi',
-        status: 'pending',
-        createdAt: '2024-01-15T10:30:00Z'
-      },
-      {
-        id: '2',
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        contactNumber: '9876543211',
-        travelMode: 'train',
-        source: 'Delhi',
-        destination: 'Bangalore',
-        status: 'pending',
-        createdAt: '2024-01-14T14:20:00Z'
-      },
-      {
-        id: '3',
-        name: 'Mike Johnson',
-        email: 'mike@example.com',
-        contactNumber: '9876543212',
-        travelMode: 'flight',
-        source: 'Chennai',
-        destination: 'Kolkata',
-        status: 'pending',
-        createdAt: '2024-01-13T09:15:00Z'
-      },
-      {
-        id: '4',
-        name: 'Sarah Wilson',
-        email: 'sarah@example.com',
-        contactNumber: '9876543213',
-        travelMode: 'train',
-        source: 'Bangalore',
-        destination: 'Mumbai',
-        status: 'pending',
-        createdAt: '2024-01-12T16:45:00Z'
-      },
-      {
-        id: '5',
-        name: 'David Brown',
-        email: 'david@example.com',
-        contactNumber: '9876543214',
-        travelMode: 'flight',
-        source: 'Hyderabad',
-        destination: 'Pune',
-        status: 'pending',
-        createdAt: '2024-01-11T11:30:00Z'
-      },
-      // Add more mock data to test pagination
-      ...Array.from({ length: 15 }, (_, i) => ({
-        id: `${i + 6}`,
-        name: `User ${i + 6}`,
-        email: `user${i + 6}@example.com`,
-        contactNumber: `987654321${i}`,
-        travelMode: i % 2 === 0 ? 'flight' as const : 'train' as const,
-        source: 'Mumbai',
-        destination: 'Delhi',
-        status: 'pending' as const,
-        createdAt: new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString()
-      }))
-    ]
-
-    setJourneys(mockJourneys)
-    setLoading(false)
+  
+    
   
 
   const handleStatusUpdate = async (journeyId: string, newStatus: 'completed' | 'pending') => {
     try {
-      // Mock API call - replace with actual API endpoint
-      const response = await fetch(`/api/admin/journeys/${journeyId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      })
 
-      if (response.ok) {
+       const response = await axios.put(`http://localhost:8080/api/user/journeys/${journeyId}`, 
+              {
+                status: newStatus
+              }
+              ,{headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+              }}
+            )
+
+      if (response.status === 200) {
         setJourneys(prev => 
           prev.map(journey => 
             journey.id === journeyId 
@@ -181,19 +209,7 @@ export default function AdminPage() {
     })
   }
 
-  if (status === 'loading' || loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-600"></div>
-      </div>
-    )
-  }
-
-  // if (!session || session.user?.email !== 'admin@aryantravels.com') {
-  //   return null
-  // }
-
-  const pendingJourneys = journeys.filter((j: Journey) => j.status === 'pending')
+  const pendingJourneys = journeys.filter((j: Journey) => j.status.toLowerCase() === 'pending')
   const totalPages = Math.ceil(pendingJourneys.length / ITEMS_PER_PAGE)
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
   const endIndex = startIndex + ITEMS_PER_PAGE

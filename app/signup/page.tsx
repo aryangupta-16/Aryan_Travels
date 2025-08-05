@@ -26,7 +26,7 @@ export default function SignupPage() {
       const result = await signup(data.name, data.email, data.password);
       if (result.token) {
         setSuccess("Account created! You can now log in.");
-        setTimeout(() => router.push("/login"), 1200);
+        setTimeout(() => router.push("/home"), 400);
       } else {
         setError(result.message || "Signup failed");
       }

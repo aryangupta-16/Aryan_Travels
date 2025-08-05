@@ -1,12 +1,17 @@
 com\aryantravels\controller\UserController.class
 com\aryantravels\model\User.class
+com\aryantravels\dto\JourneyResponse.class
+com\aryantravels\model\Journey.class
 com\aryantravels\service\AuthService.class
 com\aryantravels\dto\AuthResponse.class
 com\aryantravels\dto\SignupRequest.class
+com\aryantravels\repository\JourneyRepository.class
 com\aryantravels\dto\LoginRequest.class
+com\aryantravels\dto\CreateJourneyRequest.class
 com\aryantravels\repository\UserRepository.class
 com\aryantravels\config\SecurityConfig.class
 com\aryantravels\AryanTravelsBackendApplication.class
 com\aryantravels\util\JwtUtil.class
+com\aryantravels\service\JourneyService.class
 com\aryantravels\filter\JwtAuthenticationFilter.class
 com\aryantravels\controller\AuthController.class

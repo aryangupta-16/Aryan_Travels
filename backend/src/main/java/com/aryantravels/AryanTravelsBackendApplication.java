@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.config.EnableMongoAuditing;
 public class AryanTravelsBackendApplication {
 
     public static void main(String[] args) {
+        // System.out.println("Starting backend application")
         SpringApplication.run(AryanTravelsBackendApplication.class, args);
     }
 }
